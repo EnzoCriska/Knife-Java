@@ -2,7 +2,7 @@ import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SQLiteJDBC {
+public class SQLiteJDBC{
     Connection conn;
     Statement stat;
 
@@ -12,14 +12,6 @@ public class SQLiteJDBC {
 
         stat =conn.createStatement();
     }
-
-//    public void createTable() throws SQLException {
-//        String sql = "CREATE TABLE IF NOT EXISTS HightScore" +
-//                "(ID INT PRIMARY KEY NOT NULL," +
-//                " NAME VARCHAR(50) NOT NULL, " +
-//                " SCORE INT NOT NULL)" ;
-//        stat.executeUpdate(sql);
-//    }
 
     public void createTable() throws SQLException {
         String sql ="CREATE TABLE IF NOT EXISTS HightScore" +
@@ -34,12 +26,6 @@ public class SQLiteJDBC {
         stat.executeUpdate(sql);
 
     }
-
-//    public void insertScore(int id, String name, int score) throws SQLException {
-//        String sql = "INSERT INTO HightScore (ID ,NAME, SCORE) VALUES ("+ id +",\'" + name + "\',"+ score +");";
-//        stat.executeUpdate(sql);
-//
-//    }
 
     public void updateScore(int id, String name, int score) throws SQLException {
         String sql = "UPDATE HightScore SET NAME = '" + name + "', SCORE = " + score + " WHERE ID = " + id +";" ;

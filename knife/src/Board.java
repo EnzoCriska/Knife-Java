@@ -17,15 +17,15 @@ public class Board extends JPanel implements Commons, Runnable{
     private Knife knife;
     private Trunk trunk;
     private Trunk.Apple apple;
-    private Thread thread, thread2;
-    boolean ingame = true;
-    static int radian;
+    private Thread thread;
+    private boolean ingame = true;
+    private static int radian;
     private int score, app, player;
     private  static ArrayList<Knife> list;
-    int kdao = 0, play = 1;
-    public static int  level = 1;
-    String notic;
-    SQLiteJDBC sqLiteJDBC;
+    private int kdao = 0, play = 1;
+    public static int  level = 0;
+    private String notic;
+    private SQLiteJDBC sqLiteJDBC;
     private Map<String, Integer> map = new HashMap<String, Integer>();
 
     public Board(){
@@ -44,10 +44,19 @@ public class Board extends JPanel implements Commons, Runnable{
         apple = trunk.getApple();
         list = new ArrayList<>();
 
-        thread = new Thread(this);
-        thread2 = new Thread(trunk);
-        thread.start();
-        thread2.start();
+        if (level == 1){
+            list.add(new Knife(100,160));
+        }
+        if (level == 4){
+            list.add(new Knife(100,160));
+
+        }
+        System.out.println(list.size() + ": level " + level);
+        if (thread == null) {
+            thread = new Thread(this);
+            thread.start();
+
+        }
 
     }
 
@@ -110,7 +119,7 @@ public class Board extends JPanel implements Commons, Runnable{
 
 
         if (knife.isVisiable){
-            g.drawImage(knife.getImage(), knife.getX()-Knife_Width/2, knife.getY(), null);
+            g.drawImage(knife.getImage(), (int)knife.getX()-Knife_Width/2, (int)knife.getY(), null);
         }
         if (knife.isDestroy()){
             knife.setVisiable(false);
@@ -149,32 +158,65 @@ public class Board extends JPanel implements Commons, Runnable{
     public void connectSQL(){
         try {
             sqLiteJDBC = new SQLiteJDBC();
-            sqLiteJDBC.createTable();
+            //sqLiteJDBC.createTable();
+
+                map = sqLiteJDBC.queryTop5();
+
+                int topMin = score;
+                String topMinN = "null";
+                if (map.size() < 5){
+                    map.put(topMinN,topMin);
+                    sqLiteJDBC.insertScore(map.size()+1, topMinN, score);
+                }
+                else {
+
+                    sqLiteJDBC.updateScore(sqLiteJDBC.queryMinScore(), topMinN, topMin);
+                    map = sqLiteJDBC.queryTop5();
+
+                }
+
+                for (Map.Entry<String, Integer> entry : map.entrySet()){
+                    System.out.println(entry.getKey() + ":" + entry.getValue());
+                }
+//            sqLiteJDBC.close();
         } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+            System.out.println(e);
         } catch (SQLException e) {
-            e.printStackTrace();
+            System.out.println(e);
         }
     }
 
 
     public synchronized void startGame(){
-
-
-        if (kdao == NUM_OF_WIN){
-            for (int i = 0; i <list.size(); i++) {
-                list.remove(0);
-            }
-            boardInit();
-            kdao = 0;
-            level++;
+        if (level >9 ){
+            notic = "You are Boss";
+            ingame = false;
         }
 
-        trunk.setBx_str((int) (Trunk_X + r_trunk*Math.cos(Math.toRadians(radian))));
-        trunk.setBy_str((int) (Trunk_Y + r_trunk*Math.sin(Math.toRadians(radian))));
+        if (kdao == NUM_OF_WIN){
+            knife.setDestroy(true);
+            trunk.setFireDown(true);
+            new Thread(trunk).start();
 
-        apple.setX((int) (Trunk_X + r_trunk*Math.cos(Math.toRadians(radian))));
-        apple.setY((int) (Trunk_Y + r_trunk*Math.sin(Math.toRadians(radian))));
+                for (int i = 0; i <list.size(); i++) {
+                    list.remove(0);
+                }
+                if (!trunk.isDestroy()) {
+                    kdao = 0;
+                    level++;
+                    boardInit();
+                }
+    }
+
+        if (!trunk.isFireDown()) {
+            trunk.setBx_str((int) (Trunk_X + r_trunk * Math.cos(Math.toRadians(radian))));
+            trunk.setBy_str((int) (Trunk_Y + r_trunk * Math.sin(Math.toRadians(radian))));
+        }
+
+        if (!apple.isFire()) {
+            apple.setX((int) (Trunk_X + r_trunk * Math.cos(Math.toRadians(radian))));
+            apple.setY((int) (Trunk_Y + r_trunk * Math.sin(Math.toRadians(radian))));
+        }
 
         for (Knife k : list){
 
@@ -187,14 +229,14 @@ public class Board extends JPanel implements Commons, Runnable{
             knife = new Knife();
         }
 
-        int knife_x = knife.getX();
-        int knife_y = knife.getY();
-        int trunk_x = trunk.getX();
-        int trunk_y = trunk.getY();
+        double knife_x = knife.getX();
+        double knife_y = knife.getY();
+        double trunk_x = trunk.getX();
+        double trunk_y = trunk.getY();
 
         for (Knife kni : list){
-            int knix = kni.getX();
-            int kniy = kni.getY();
+            double knix = kni.getX();
+            double kniy = kni.getY();
 
             if (knife_x >= knix -5 && knife_x <= knix +5 && knife_y > kniy && knife_y < kniy+10){
                 knife.a = -knife.a;
@@ -205,12 +247,10 @@ public class Board extends JPanel implements Commons, Runnable{
 
         }
 
-        if (knife_x >= (trunk_x - 50) && knife_x <= (trunk_x + 50) &&
-                knife_y >= (trunk_y - 50) && knife_y <= (trunk_y + 50)){
+        if (knife_x >= (trunk_x - r_trunk) && knife_x <= (trunk_x + r_trunk) &&
+                knife_y >= (trunk_y - r_trunk) && knife_y <= (trunk_y + r_trunk)){
             score++;
             kdao++;
-//            System.out.println(apple.getX() + "  : "+apple.getY());
-//            System.out.println(knife_x + ":" + knife_y);
             {
                 Knife tpmk = new Knife();
                 tpmk.setX(155);
@@ -218,12 +258,16 @@ public class Board extends JPanel implements Commons, Runnable{
                 tpmk.setImage(knife.getImage());
 
                 tpmk.setRad(90);
-                if (knife_x - 5 >= apple.getX() -28 && knife_x -5 <= apple.getX()+28 && knife_y <= apple.getY()+28){
-                    app+=10;
-                    score+=5;
-                    apple.setDestroy(true);
-                    apple.setVisiable(true);
+                if (!apple.isFire()){
+                    if (knife_x - 5 >= apple.getX() -28 && knife_x -5 <= apple.getX()+28 && knife_y <= apple.getY()+28){
+                        app+=10;
+                        score+=5;
+                        apple.setFire(true);
+                        Thread threadq = new Thread(apple);
+                        threadq.start();
+                    }
                 }
+
                 list.add(tpmk);
                 knife.setDestroy(true);
                 knife.setVisiable(false);
@@ -231,7 +275,6 @@ public class Board extends JPanel implements Commons, Runnable{
             }
          knife = new Knife();
         }
-
 
         if (knife_y > 500 || knife_y <= 0){
             knife.setDestroy(true);
@@ -250,33 +293,9 @@ public class Board extends JPanel implements Commons, Runnable{
                 e.printStackTrace();
             }
         }
-
-        gameOver();
         connectSQL();
-        try {
-            map = sqLiteJDBC.queryTop5();
+        gameOver();
 
-            int topMin = score;
-            String topMinN = "null";
-            if (map.size() < 5){
-                map.put(topMinN,topMin);
-                sqLiteJDBC.insertScore(map.size()+1, topMinN, score);
-            }
-            else {
-
-                sqLiteJDBC.updateScore(sqLiteJDBC.queryMinScore(), topMinN, topMin);
-                map = sqLiteJDBC.queryTop5();
-
-            }
-
-            for (Map.Entry<String, Integer> entry : map.entrySet()){
-                System.out.println(entry.getKey() + ":" + entry.getValue());
-            }
-            sqLiteJDBC.close();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
 
     }
 
@@ -287,8 +306,13 @@ public class Board extends JPanel implements Commons, Runnable{
 
         g.drawString(notic, 130, 280);
         g.setColor(Color.red);
-
-        g.drawString("Your score: " + score, 120, 300);
+        int ax = 0;
+        g.drawString("Top Score", 130, 300);
+        for (Map.Entry<String, Integer> entry : map.entrySet()){
+            g.drawString(entry.getKey() + " \t:\t " + entry.getValue(), 130, 320+ax*10);
+        }
+        g.setColor(Color.YELLOW);
+        g.drawString("Your score: " + score, 120, 400);
     }
 
 

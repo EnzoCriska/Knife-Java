@@ -1,7 +1,7 @@
 import java.awt.*;
 
 public class Circle {
-    protected  int x, y, a;
+    protected  double x, y, a;
     protected boolean destroy, isVisiable;
     protected Image image;
 
@@ -10,19 +10,19 @@ public class Circle {
         isVisiable = true;
     }
 
-    public int getX() {
+    public double getX() {
         return x;
     }
 
-    public void setX(int x) {
+    public void setX(double x) {
         this.x = x;
     }
 
-    public int getY() {
+    public double getY() {
         return y;
     }
 
-    public void setY(int y) {
+    public void setY(double y) {
         this.y = y;
     }
 

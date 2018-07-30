@@ -6,8 +6,12 @@ public class Main extends JFrame implements Commons {
         setVisible(true);
         setSize(BOARD_WIDTH, BOARD_HEIGHT);
         setResizable(false);
+
+
+
         add(new Board());
     }
+
 
     public static void main(String[] args) {
         new Main();

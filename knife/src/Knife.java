@@ -13,6 +13,13 @@ public class Knife extends Circle implements Commons, Runnable{
         ImageIcon ic = new ImageIcon("res/res/knifes/Layer " + Board.level + ".png");
         this.image = ic.getImage().getScaledInstance(10, 30, Image.SCALE_DEFAULT);
     }
+    public Knife(double x, double y){
+        this.setX(x);
+        this.setY(y);
+        a  = -3;
+        ImageIcon ic = new ImageIcon("res/res/knifes/Layer " + Board.level + ".png");
+        this.image = ic.getImage().getScaledInstance(10, 30, Image.SCALE_DEFAULT);
+    }
 
     public double getRad() {
         return rad;
