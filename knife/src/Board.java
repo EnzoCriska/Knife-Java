@@ -18,27 +18,32 @@ public class Board extends JPanel implements Commons, Runnable{
     private Trunk trunk;
     private Trunk.Apple apple;
     private Thread thread;
-    private boolean ingame = true;
+    private boolean ingame = true, fly = false;
     private static int radian;
     private int score, app, player;
-    private  static ArrayList<Knife> list;
-    private int kdao = 0, play = 1;
-    public static int  level = 0;
+    private  static ArrayList<Knife> list, listFly;
+    private int kdao = 0;
+    public static int  level;
     private String notic;
     private SQLiteJDBC sqLiteJDBC;
-    private Map<String, Integer> map = new HashMap<String, Integer>();
+    private ArrayList<HightScore> top5 = new ArrayList<>();
+    public static int NUM_OF_WIN = 8;
 
     public Board(){
         addKeyListener(new  AdapterKey());
         setFocusable(true);
         setSize(BOARD_WIDTH,BOARD_HEIGHT);
         setBackground(Color.BLACK);
-
+        level = 0;
 
     }
 
     public void boardInit(){
         radian = 180;
+        NUM_OF_WIN += 1;
+//        for (int i =0; i< NUM_OF_WIN; i++){
+//            listFly.add(new Knife());
+//        }
         knife = new Knife();
         trunk = new Trunk();
         apple = trunk.getApple();
@@ -129,11 +134,11 @@ public class Board extends JPanel implements Commons, Runnable{
         ImageIcon ic = new ImageIcon("res/res/ui/knife_icon.png");
         for (int i = 0; i<NUM_OF_WIN; i++){
             if (kdao > i){
-                g.drawImage(ic.getImage(), 20, 300+i*25, null);
+                g.drawImage(ic.getImage(), 20, 550-i*25, null);
             }else {
                 BufferedImage knirStr = loadImage("res/res/knifes/Layer " + level + ".png");
 
-                AffineTransform af = AffineTransform.getTranslateInstance(20, 300+i*25);
+                AffineTransform af = AffineTransform.getTranslateInstance(20, 550-i*25);
                 af.rotate(Math.toRadians(15));
                 Graphics2D g2d = (Graphics2D) g;
                 g2d.drawImage(knirStr, af, null);
@@ -158,36 +163,40 @@ public class Board extends JPanel implements Commons, Runnable{
     public void connectSQL(){
         try {
             sqLiteJDBC = new SQLiteJDBC();
-            //sqLiteJDBC.createTable();
+//            sqLiteJDBC.query("DROP TABLE HightScore");
+//            sqLiteJDBC.createTable();
 
-                map = sqLiteJDBC.queryTop5();
+            top5 = sqLiteJDBC.queryTop5();
 
                 int topMin = score;
                 String topMinN = "null";
-                if (map.size() < 5){
-                    map.put(topMinN,topMin);
-                    sqLiteJDBC.insertScore(map.size()+1, topMinN, score);
+                if (top5.size() < 5){
+
+                    top5.add(new HightScore(topMinN, topMin, app));
+                    sqLiteJDBC.insertScore( topMinN, score, app);
                 }
                 else {
 
-                    sqLiteJDBC.updateScore(sqLiteJDBC.queryMinScore(), topMinN, topMin);
-                    map = sqLiteJDBC.queryTop5();
+                    sqLiteJDBC.updateScore(sqLiteJDBC.queryMinScore(), topMinN, topMin, app);
+                    top5 = sqLiteJDBC.queryTop5();
 
                 }
 
-                for (Map.Entry<String, Integer> entry : map.entrySet()){
-                    System.out.println(entry.getKey() + ":" + entry.getValue());
-                }
+            top5 = sqLiteJDBC.queryTop5();
+
+
 //            sqLiteJDBC.close();
         } catch (ClassNotFoundException e) {
+            e.printStackTrace();
             System.out.println(e);
         } catch (SQLException e) {
+            e.printStackTrace();
             System.out.println(e);
         }
     }
 
 
-    public synchronized void startGame(){
+    public void startGame(){
         if (level >9 ){
             notic = "You are Boss";
             ingame = false;
@@ -225,8 +234,9 @@ public class Board extends JPanel implements Commons, Runnable{
         }
 
 
-        if (!knife.isVisiable()){
+        if (!knife.isVisiable){
             knife = new Knife();
+            fly = false;
         }
 
         double knife_x = knife.getX();
@@ -288,7 +298,7 @@ public class Board extends JPanel implements Commons, Runnable{
             repaint();
             startGame();
             try {
-                Thread.sleep(10);
+                Thread.sleep(10 - level);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -300,33 +310,43 @@ public class Board extends JPanel implements Commons, Runnable{
     }
 
     private void gameOver(){
-        Graphics g = this.getGraphics();
-        this.setBackground(Color.BLACK);
-        g.setColor(Color.GREEN);
+        Container parent = this.getParent();
+        parent.remove(this);
+        GameOver game = new GameOver();
+        parent.add(game);
+        game.requestFocus();
+        parent.repaint();
+        parent.revalidate();
 
-        g.drawString(notic, 130, 280);
-        g.setColor(Color.red);
-        int ax = 0;
-        g.drawString("Top Score", 130, 300);
-        for (Map.Entry<String, Integer> entry : map.entrySet()){
-            g.drawString(entry.getKey() + " \t:\t " + entry.getValue(), 130, 320+ax*10);
-        }
-        g.setColor(Color.YELLOW);
-        g.drawString("Your score: " + score, 120, 400);
+//        Graphics g = this.getGraphics();
+//        this.setBackground(Color.BLACK);
+//        g.setColor(Color.GREEN);
+//
+//        g.drawString(notic, 130, 280);
+//        g.setColor(Color.red);
+//        int ax = 0;
+//        g.drawString("Top Score", 130, 300);
+//        for (Map.Entry<String, Integer> entry : map.entrySet()){
+//            g.drawString(entry.getKey() + " \t:\t " + entry.getValue(), 130, 320+ax*10);
+//        }
+//        g.setColor(Color.YELLOW);
+//        g.drawString("Your score: " + score, 120, 400);
     }
+
 
 
     public class AdapterKey extends KeyAdapter{
 
         @Override
         public void keyPressed(KeyEvent keyEvent) {
-            if (keyEvent.getKeyChar() == KeyEvent.VK_SPACE) {
-                Thread thread3 = new Thread(knife);
-                thread3.start();
+
+            if (keyEvent.getKeyChar() == KeyEvent.VK_SPACE || keyEvent.getKeyChar() == KeyEvent.VK_ENTER) {
+                new Thread(knife).start();
             }
-
-
-
+//
         }
+
+
     }
+
 }

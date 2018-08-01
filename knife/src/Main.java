@@ -9,7 +9,7 @@ public class Main extends JFrame implements Commons {
 
 
 
-        add(new Board());
+        add(new Homeses());
     }
 
 

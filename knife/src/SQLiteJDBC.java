@@ -1,6 +1,5 @@
 import java.sql.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
 
 public class SQLiteJDBC{
     Connection conn;
@@ -17,24 +16,25 @@ public class SQLiteJDBC{
         String sql ="CREATE TABLE IF NOT EXISTS HightScore" +
                 "(ID INTEGER PRIMARY KEY AUTOINCREMENT," +
                 "NAMEPlay VARCHAR(50) NOT NULL, " +
-                " SCORE INT NOT NULL)" ;
+                " SCORE INT NOT NULL," +
+                "APPLESCORE INT NOT NULL)" ;
         stat.executeUpdate(sql);
     }
 
-    public void insertScore(int id, String name, int score) throws SQLException {
-        String sql = "INSERT INTO HightScore(NAMEPlay, SCORE) VALUES (\'" + name + "\',"+ score +");";
+    public void insertScore(String name, int score, int appScore) throws SQLException {
+        String sql = "INSERT INTO HightScore(NAMEPlay, SCORE, APPLESCORE) VALUES (\'" + name + "\',"+ score +", "+ appScore +");";
         stat.executeUpdate(sql);
 
     }
 
-    public void updateScore(int id, String name, int score) throws SQLException {
-        String sql = "UPDATE HightScore SET NAME = '" + name + "', SCORE = " + score + " WHERE ID = " + id +";" ;
-        stat.executeUpdate(sql);
+    public void updateScore(int id, String name, int score, int appScore) throws SQLException {
+        String sql = "UPDATE HightScore SET NAMEPlay = \'" + name + "\', SCORE = " + score + ", APPLESCORE = " + appScore +" WHERE ID = " + id +";" ;
+          stat.executeUpdate(sql);
     }
 
     public int queryMinScore() throws SQLException {
         int idMin = 0;
-        String sql = "SELECT * FROM HightScore ORDER BY ASC LIMIT 1;";
+        String sql = "SELECT * FROM HightScore ORDER BY SCORE ASC LIMIT 1;";
         ResultSet rs = stat.executeQuery(sql);
         while (rs.next()){
             idMin = rs.getInt(1);
@@ -61,16 +61,22 @@ public class SQLiteJDBC{
         return score;
     }
 
-    public Map<String, Integer> queryTop5() throws SQLException {
-        Map map = new HashMap();
+    public ArrayList<HightScore> queryTop5() throws SQLException {
+        ArrayList top5 = new ArrayList();
+
+
         String sql = "SELECT * FROM HightScore ORDER BY SCORE DESC LIMIT 5;";
         ResultSet rs = conn.createStatement().executeQuery(sql);
         while (rs.next()){
-            map.put(rs.getString(2), rs.getInt(3));
+            String name = rs.getString(2);
+            int score = rs.getInt(3);
+            int appScore = rs.getInt(4);
+            HightScore hightScore = new HightScore(name, score, appScore);
+            top5.add(hightScore);
 
         }
 
-        return map;
+        return top5;
     }
 
 

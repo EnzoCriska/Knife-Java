@@ -48,6 +48,7 @@ public class Trunk extends Circle implements Commons, Runnable {
     public void run() {
         while (this.getY() < 500){
             this.setX(this.getX() + 0.5);
+
             this.setY(this.getY() + 2.5);
             try {
                 Thread.sleep(10);
@@ -81,6 +82,7 @@ public class Trunk extends Circle implements Commons, Runnable {
         public void run() {
             while (this.getY() < 500) {
                 this.setX(apple.getX() + 0.3);
+
                 this.setY(apple.getY() + 2);
                 try {
                     Thread.sleep(10);

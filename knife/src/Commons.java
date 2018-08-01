@@ -19,7 +19,7 @@ public interface Commons {
     public static final int Center_X = 50;
     public static final int Center_Y =50;
 
-    public static final int NUM_OF_WIN = 8;
+
 
 
 }
